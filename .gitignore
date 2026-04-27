@@ -1,0 +1,14 @@
+.env
+node_modules/
+coverage/
+dist/
+*.log
+
+backups/
+.deploy/
+
+terraform.tfstate
+terraform.tfstate.backup
+.terraform/
+
+.DS_Store
