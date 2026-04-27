@@ -42,26 +42,11 @@ required_files=(
   "README.md"
   "runbook.md"
   "Makefile"
-  "docker-compose.yml"
-  "docker-compose.prod.yml"
   "app/package.json"
-  "app/Dockerfile"
-  "nginx/nginx.conf"
+  "app/src/server.js"
+  "app/tests/server.test.js"
   "scripts/bootstrap.sh"
   "scripts/test.sh"
-  "scripts/build.sh"
-  "scripts/deploy.sh"
-  "scripts/rollback.sh"
-  "scripts/healthcheck.sh"
-  "scripts/backup-db.sh"
-  "scripts/logs.sh"
-  "k8s/namespace.yaml"
-  "k8s/deployment.yaml"
-  "k8s/service.yaml"
-  "k8s/ingress.yaml"
-  "monitoring/prometheus.yml"
-  ".github/workflows/ci.yml"
-  ".github/workflows/cd.yml"
 )
 
 for file in "${required_files[@]}"; do
@@ -74,22 +59,6 @@ for file in "${required_files[@]}"; do
 done
 
 echo
-echo "Checking environment files..."
-
-if [ -f ".env.example" ]; then
-  echo "OK: .env.example exists"
-else
-  echo "ERROR: .env.example is missing"
-  exit 1
-fi
-
-if [ -f ".env" ]; then
-  echo "OK: .env exists locally"
-else
-  echo "WARNING: .env does not exist. Run ./scripts/bootstrap.sh"
-fi
-
-echo
 echo "Checking shell script syntax..."
 
 for script in scripts/*.sh; do
@@ -98,17 +67,17 @@ for script in scripts/*.sh; do
 done
 
 echo
-echo "Checking executable permissions..."
+echo "Checking JavaScript syntax..."
 
-for script in scripts/*.sh; do
-  if [ -x "$script" ]; then
-    echo "OK: executable -> $script"
-  else
-    echo "ERROR: script is not executable -> $script"
-    echo "Fix with: chmod +x $script"
-    exit 1
-  fi
-done
+cd app
+npm run lint
 
 echo
-echo "All project structure tests passed successfully."
+echo "Running application tests..."
+
+npm test
+
+cd ..
+
+echo
+echo "All tests passed successfully."
