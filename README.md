@@ -69,3 +69,10 @@ devops-taskboard/
 ├── .env.example
 ├── README.md
 └── runbook.md
+
+## Docker Build
+
+Build the API Docker image:
+
+```bash
+make build
