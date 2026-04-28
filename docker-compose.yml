@@ -1,0 +1,17 @@
+services:
+  app:
+    build:
+      context: ./app
+    image: devops-taskboard-api:local
+    container_name: devops-taskboard-api
+    environment:
+      APP_PORT: 3000
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(res => process.exit(res.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s

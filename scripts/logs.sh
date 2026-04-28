@@ -5,8 +5,10 @@ echo "======================================"
 echo " DevOps TaskBoard Logs Script"
 echo "======================================"
 
+SERVICE="${1:-app}"
+
 echo
-echo "Logs command is not implemented yet."
-echo "Later, this script will show Docker Compose logs."
+echo "Showing logs for service: $SERVICE"
 echo
-echo "For now, logs script completed successfully."
+
+docker compose logs -f "$SERVICE"

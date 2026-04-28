@@ -6,7 +6,15 @@ echo " DevOps TaskBoard Deploy Script"
 echo "======================================"
 
 echo
-echo "Deploy step is not implemented yet."
-echo "Later, this script will deploy the app with Docker Compose or Kubernetes."
+echo "Starting Docker Compose deployment..."
+
+docker compose up -d --build
+
 echo
-echo "For now, deploy script completed successfully."
+echo "Waiting for application to become healthy..."
+sleep 5
+
+./scripts/healthcheck.sh http://localhost:3000/health
+
+echo
+echo "Deployment completed successfully."
