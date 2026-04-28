@@ -11,10 +11,10 @@ echo "Starting Docker Compose deployment..."
 docker compose up -d --build
 
 echo
-echo "Waiting for application to become healthy..."
-sleep 5
+echo "Waiting for application through Nginx..."
+sleep 8
 
-./scripts/healthcheck.sh http://localhost:3000/health
+./scripts/healthcheck.sh http://localhost:8080/health
 
 echo
 echo "Deployment completed successfully."

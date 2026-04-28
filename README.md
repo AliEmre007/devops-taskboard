@@ -83,3 +83,10 @@ Start the full local stack:
 
 ```bash
 docker compose up -d --build
+
+## Nginx Reverse Proxy
+
+The application is accessed through Nginx.
+
+```text
+localhost:8080 -> Nginx -> app:3000
