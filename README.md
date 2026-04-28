@@ -76,3 +76,10 @@ Build the API Docker image:
 
 ```bash
 make build
+
+## Docker Compose with PostgreSQL and Redis
+
+Start the full local stack:
+
+```bash
+docker compose up -d --build

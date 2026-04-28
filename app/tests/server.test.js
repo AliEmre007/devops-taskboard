@@ -1,5 +1,5 @@
 const request = require("supertest");
-const app = require("../src/server");
+const { app, pool, redisClient } = require("../src/server");
 
 describe("DevOps TaskBoard API", () => {
   test("GET / should return service information", async () => {
@@ -17,11 +17,18 @@ describe("DevOps TaskBoard API", () => {
     expect(response.body.status).toBe("ok");
   });
 
-  test("GET /ready should return ready", async () => {
-    const response = await request(app).get("/ready");
+  test("POST /tasks without title should return 400", async () => {
+    const response = await request(app).post("/tasks").send({});
 
-    expect(response.statusCode).toBe(200);
-    expect(response.body.status).toBe("ready");
+    expect(response.statusCode).toBe(400);
+    expect(response.body.error).toBe("Task title is required");
   });
 });
 
+afterAll(async () => {
+  await pool.end();
+
+  if (redisClient.isOpen) {
+    await redisClient.quit();
+  }
+});

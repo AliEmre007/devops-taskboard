@@ -4,14 +4,57 @@ services:
       context: ./app
     image: devops-taskboard-api:local
     container_name: devops-taskboard-api
+    env_file:
+      - .env
     environment:
-      APP_PORT: 3000
       NODE_ENV: production
     ports:
       - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(res => process.exit(res.ok ? 0 : 1)).catch(() => process.exit(1))"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 10s
+    networks:
+      - taskboard-net
+
+  postgres:
+    image: postgres:17-alpine
+    container_name: devops-taskboard-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-taskboard}
+      POSTGRES_USER: ${POSTGRES_USER:-taskboard_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-taskboard_pass}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-taskboard_user} -d $${POSTGRES_DB:-taskboard}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - taskboard-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: devops-taskboard-redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - taskboard-net
+
+volumes:
+  postgres_data:
+
+networks:
+  taskboard-net:
+    driver: bridge
