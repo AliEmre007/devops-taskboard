@@ -1,6 +1,6 @@
 .RECIPEPREFIX := >
 
-.PHONY: bootstrap test build up down restart ps deploy rollback backup logs health structure status clean-help
+.PHONY: bootstrap test build up down restart ps deploy rollback backup migrate logs health structure status clean-help
 
 bootstrap:
 > ./scripts/bootstrap.sh
@@ -32,6 +32,9 @@ rollback:
 
 backup:
 > ./scripts/backup-db.sh
+
+migrate:
+> ./scripts/migrate-db.sh
 
 logs:
 > ./scripts/logs.sh
