@@ -1,5 +1,7 @@
 const request = require("supertest");
-const { app, pool, redisClient } = require("../src/server");
+const app = require("../src/app");
+const { pool } = require("../src/db/pool");
+const { redisClient } = require("../src/cache/redis");
 
 describe("DevOps TaskBoard API", () => {
   test("GET / should return service information", async () => {
