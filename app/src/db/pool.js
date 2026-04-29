@@ -9,20 +9,6 @@ const pool = new Pool({
   password: env.postgres.password
 });
 
-async function initDb() {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS tasks (
-      id SERIAL PRIMARY KEY,
-      title TEXT NOT NULL,
-      completed BOOLEAN NOT NULL DEFAULT FALSE,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    );
-  `);
-
-  console.log("Database initialized");
-}
-
 module.exports = {
-  pool,
-  initDb
+  pool
 };

@@ -1,10 +1,8 @@
 const app = require("./app");
 const env = require("./config/env");
-const { initDb } = require("./db/pool");
 const { connectRedis } = require("./cache/redis");
 
 async function start() {
-  await initDb();
   await connectRedis();
 
   app.listen(env.app.port, "0.0.0.0", () => {
