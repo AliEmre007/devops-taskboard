@@ -72,6 +72,19 @@ services:
     networks:
       - taskboard-net
 
+  prometheus:
+    image: prom/prometheus
+    container_name: devops-taskboard-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - taskboard-net
+
 volumes:
   postgres_data:
 

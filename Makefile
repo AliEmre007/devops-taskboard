@@ -1,6 +1,6 @@
 .RECIPEPREFIX := >
 
-.PHONY: bootstrap test build up down restart ps deploy rollback backup migrate logs health structure status clean-help
+.PHONY: bootstrap test build up down restart ps deploy rollback backup migrate logs health metrics structure status clean-help
 
 bootstrap:
 > ./scripts/bootstrap.sh
@@ -41,6 +41,9 @@ logs:
 
 health:
 > ./scripts/healthcheck.sh
+
+metrics:
+> curl http://localhost:8080/metrics | head -40
 
 structure:
 > tree -a -I ".git|node_modules"

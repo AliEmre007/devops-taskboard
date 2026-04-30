@@ -3,10 +3,11 @@ const { pool } = require("./db/pool");
 const { redisClient, isRedisConnected } = require("./cache/redis");
 const tasksRoutes = require("./routes/tasks.routes");
 const errorHandler = require("./middleware/error-handler");
-
+const { metricsMiddleware, metricsHandler } = require("./metrics/prometheus");
 const app = express();
 
 app.use(express.json());
+app.use(metricsMiddleware);
 
 app.get("/", (req, res) => {
   res.json({
@@ -51,7 +52,7 @@ app.get("/ready", async (req, res) => {
 });
 
 app.use("/tasks", tasksRoutes);
-
+app.get("/metrics", metricsHandler);
 app.use(errorHandler);
 
 module.exports = app;

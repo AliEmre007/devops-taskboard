@@ -67,20 +67,38 @@ jobs:
       - name: Create environment file
         run: cp .env.example .env
 
+      - name: Make scripts executable
+        run: chmod +x scripts/*.sh
+
       - name: Validate Docker Compose config
         run: docker compose config
 
       - name: Start Docker Compose stack
-        run: docker compose up -d --build
-
-      - name: Wait for services
-        run: sleep 20
+        run: make up
 
       - name: Show running services
-        run: docker compose ps
+        run: make ps
+
+      - name: Wait for Nginx health endpoint
+        run: |
+          for i in {1..30}; do
+            if curl --fail --silent http://localhost:8080/health; then
+              echo
+              echo "Application is healthy."
+              exit 0
+            fi
+
+            echo "Waiting for application to become healthy... attempt $i"
+            sleep 2
+          done
+
+          echo "Application did not become healthy in time."
+          docker compose ps
+          docker compose logs
+          exit 1
 
       - name: Run database migrations
-        run: ./scripts/migrate-db.sh
+        run: make migrate
 
       - name: Show applied migrations
         run: |
@@ -94,6 +112,12 @@ jobs:
 
       - name: Smoke test readiness endpoint through Nginx
         run: curl --fail http://localhost:8080/ready
+
+      - name: Smoke test metrics endpoint through Nginx
+        run: curl --fail --silent http://localhost:8080/metrics | head -40
+
+      - name: Check Prometheus health
+        run: curl --fail http://localhost:9090/-/healthy
 
       - name: Create test task through Nginx
         run: |

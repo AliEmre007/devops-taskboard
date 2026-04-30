@@ -7,7 +7,8 @@ echo "======================================"
 
 if [ ! -f .env ]; then
   echo "ERROR: .env file not found."
-  echo "Run: make bootstrap"
+  echo "Run:"
+  echo "  make bootstrap"
   exit 1
 fi
 
@@ -29,6 +30,7 @@ echo "Checking PostgreSQL service..."
 
 if ! docker compose ps postgres | grep -q "running\|Up"; then
   echo "ERROR: PostgreSQL service is not running."
+  echo
   echo "Start the stack first:"
   echo "  make up"
   exit 1
@@ -42,12 +44,24 @@ echo "Ensuring schema_migrations table exists..."
 docker compose exec -T postgres psql \
   -U "$POSTGRES_USER" \
   -d "$POSTGRES_DB" \
-  -c "CREATE TABLE IF NOT EXISTS schema_migrations (filename TEXT PRIMARY KEY, applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW());"
+  -c "CREATE TABLE IF NOT EXISTS schema_migrations (
+        filename TEXT PRIMARY KEY,
+        applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );"
 
 echo
 echo "Applying pending migrations..."
 
-for migration in "$MIGRATIONS_DIR"/*.sql; do
+shopt -s nullglob
+migrations=("$MIGRATIONS_DIR"/*.sql)
+shopt -u nullglob
+
+if [ "${#migrations[@]}" -eq 0 ]; then
+  echo "No migration files found in: $MIGRATIONS_DIR"
+  exit 0
+fi
+
+for migration in "${migrations[@]}"; do
   filename="$(basename "$migration")"
 
   already_applied="$(
