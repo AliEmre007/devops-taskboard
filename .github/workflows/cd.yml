@@ -1,0 +1,77 @@
+name: CD
+
+on:
+  workflow_run:
+    workflows:
+      - Docker Publish
+    types:
+      - completed
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PROD_SSH_KEY }}" > ~/.ssh/devops_taskboard_cd
+          chmod 600 ~/.ssh/devops_taskboard_cd
+          ssh-keyscan -H "${{ secrets.PROD_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Copy deployment files to server
+        run: |
+          tar czf - \
+            docker-compose.prod.yml \
+            nginx \
+            monitoring \
+            app/db/migrations \
+            scripts/migrate-db.sh \
+          | ssh -i ~/.ssh/devops_taskboard_cd "${{ secrets.PROD_USER }}@${{ secrets.PROD_HOST }}" \
+            "mkdir -p /opt/devops-taskboard && tar xzf - -C /opt/devops-taskboard"
+
+      - name: Write production environment file
+        run: |
+          cat > .env.prod <<'EOF'
+          ${{ secrets.PROD_ENV_FILE }}
+          EOF
+
+          scp -i ~/.ssh/devops_taskboard_cd .env.prod "${{ secrets.PROD_USER }}@${{ secrets.PROD_HOST }}:/opt/devops-taskboard/.env.prod"
+
+      - name: Log in to GHCR on server
+        run: |
+          echo "${{ github.token }}" | ssh -i ~/.ssh/devops_taskboard_cd "${{ secrets.PROD_USER }}@${{ secrets.PROD_HOST }}" \
+            "docker login ghcr.io -u '${{ github.actor }}' --password-stdin"
+
+      - name: Deploy on server
+        run: |
+          ssh -i ~/.ssh/devops_taskboard_cd "${{ secrets.PROD_USER }}@${{ secrets.PROD_HOST }}" "
+            set -euo pipefail
+
+            cd /opt/devops-taskboard
+
+            chmod +x scripts/migrate-db.sh
+
+            docker compose --env-file .env.prod -f docker-compose.prod.yml pull
+            docker compose --env-file .env.prod -f docker-compose.prod.yml up -d
+
+            ENV_FILE=.env.prod COMPOSE_ARGS='--env-file .env.prod -f docker-compose.prod.yml' ./scripts/migrate-db.sh
+
+            curl -fsS http://localhost:8080/health
+            curl -fsS http://localhost:8080/ready
+            curl -fsS http://localhost:9090/-/healthy
+          "
