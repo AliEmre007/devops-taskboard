@@ -7,7 +7,8 @@ echo "======================================"
 
 if [ ! -f .env ]; then
   echo "ERROR: .env file not found."
-  echo "Run: make bootstrap"
+  echo "Run:"
+  echo "  make bootstrap"
   exit 1
 fi
 
@@ -21,6 +22,8 @@ POSTGRES_DB="${POSTGRES_DB:-taskboard}"
 BACKUP_DIR="./backups"
 TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
 BACKUP_FILE="$BACKUP_DIR/taskboard_${TIMESTAMP}.sql"
+COMPRESSED_BACKUP_FILE="${BACKUP_FILE}.gz"
+LATEST_BACKUP_FILE="$BACKUP_DIR/latest.sql.gz"
 
 mkdir -p "$BACKUP_DIR"
 
@@ -29,6 +32,7 @@ echo "Checking if PostgreSQL container is running..."
 
 if ! docker compose ps postgres | grep -q "running\|Up"; then
   echo "ERROR: PostgreSQL service does not seem to be running."
+  echo
   echo "Start the stack first:"
   echo "  make up"
   exit 1
@@ -46,10 +50,16 @@ docker compose exec -T postgres pg_dump \
 
 gzip "$BACKUP_FILE"
 
+cp "$COMPRESSED_BACKUP_FILE" "$LATEST_BACKUP_FILE"
+
 echo
 echo "Backup completed successfully:"
-echo "${BACKUP_FILE}.gz"
+echo "$COMPRESSED_BACKUP_FILE"
+
+echo
+echo "Latest backup pointer:"
+echo "$LATEST_BACKUP_FILE"
 
 echo
 echo "Backup size:"
-ls -lh "${BACKUP_FILE}.gz"
+ls -lh "$COMPRESSED_BACKUP_FILE"
