@@ -1,7 +1,7 @@
 .RECIPEPREFIX := >
 .DEFAULT_GOAL := help
 
-.PHONY: help bootstrap test build up down restart ps deploy rollback backup restore migrate logs logs-app logs-db logs-redis logs-nginx logs-prometheus logs-all health metrics structure status clean
+.PHONY: help bootstrap test build up down restart ps deploy rollback backup restore migrate logs logs-app logs-db logs-redis logs-nginx logs-prometheus logs-all health metrics structure status clean prod-build prod-up prod-down prod-restart prod-ps prod-logs prod-health prod-status
 
 help:
 > @echo "Available commands:"
@@ -117,3 +117,41 @@ structure:
 
 clean:
 > docker compose down -v --remove-orphans
+
+prod-build:
+> docker build -t devops-taskboard-api:local ./app
+
+prod-up:
+> docker compose --env-file .env.prod -f docker-compose.prod.yml up -d
+
+prod-down:
+> docker compose --env-file .env.prod -f docker-compose.prod.yml down
+
+prod-restart:
+> docker compose --env-file .env.prod -f docker-compose.prod.yml down
+> docker compose --env-file .env.prod -f docker-compose.prod.yml up -d
+
+prod-ps:
+> docker compose --env-file .env.prod -f docker-compose.prod.yml ps
+
+prod-logs:
+> docker compose --env-file .env.prod -f docker-compose.prod.yml logs -f --tail=100
+
+prod-health:
+> curl -fsS http://localhost:8080/health
+> curl -fsS http://localhost:8080/ready
+
+prod-status:
+> @echo "=== Production-like containers ==="
+> docker compose --env-file .env.prod -f docker-compose.prod.yml ps
+> @echo ""
+> @echo "=== Production-like app health ==="
+> curl -fsS http://localhost:8080/health || true
+> @echo ""
+> @echo ""
+> @echo "=== Production-like app readiness ==="
+> curl -fsS http://localhost:8080/ready || true
+> @echo ""
+> @echo ""
+> @echo "=== Production-like Prometheus ==="
+> curl -fsS http://localhost:9090/-/healthy || true
