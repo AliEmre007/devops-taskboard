@@ -1,7 +1,7 @@
 .RECIPEPREFIX := >
 .DEFAULT_GOAL := help
 
-.PHONY: help bootstrap test build up down restart ps deploy rollback backup restore migrate logs logs-app logs-db logs-redis logs-nginx logs-prometheus logs-all health metrics structure status clean prod-build prod-up prod-down prod-restart prod-ps prod-logs prod-health prod-status
+.PHONY: help bootstrap test build up down restart ps deploy rollback backup restore migrate logs logs-app logs-db logs-redis logs-nginx logs-prometheus logs-all health metrics structure status clean prod-build prod-up prod-down prod-restart prod-ps prod-logs prod-health prod-status prod-pull prod-deploy prod-migrate
 
 help:
 > @echo "Available commands:"
@@ -155,3 +155,16 @@ prod-status:
 > @echo ""
 > @echo "=== Production-like Prometheus ==="
 > curl -fsS http://localhost:9090/-/healthy || true
+
+prod-pull:
+> docker compose --env-file .env.prod -f docker-compose.prod.yml pull
+
+prod-migrate:
+> ENV_FILE=.env.prod COMPOSE_ARGS="--env-file .env.prod -f docker-compose.prod.yml" ./scripts/migrate-db.sh
+
+prod-deploy:
+> docker compose --env-file .env.prod -f docker-compose.prod.yml pull
+> docker compose --env-file .env.prod -f docker-compose.prod.yml up -d
+> ENV_FILE=.env.prod COMPOSE_ARGS="--env-file .env.prod -f docker-compose.prod.yml" ./scripts/migrate-db.sh
+> curl -fsS http://localhost:8080/health
+> curl -fsS http://localhost:8080/ready

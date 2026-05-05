@@ -5,15 +5,31 @@ echo "======================================"
 echo " DevOps TaskBoard Database Migrations"
 echo "======================================"
 
-if [ ! -f .env ]; then
-  echo "ERROR: .env file not found."
-  echo "Run:"
+ENV_FILE="${ENV_FILE:-.env}"
+COMPOSE_ARGS="${COMPOSE_ARGS:-}"
+
+compose() {
+  if [ -n "$COMPOSE_ARGS" ]; then
+    # shellcheck disable=SC2086
+    docker compose $COMPOSE_ARGS "$@"
+  else
+    docker compose "$@"
+  fi
+}
+
+if [ ! -f "$ENV_FILE" ]; then
+  echo "ERROR: environment file not found: $ENV_FILE"
+  echo
+  echo "For local:"
   echo "  make bootstrap"
+  echo
+  echo "For production-like:"
+  echo "  cp .env .env.prod"
   exit 1
 fi
 
 set -a
-source .env
+source "$ENV_FILE"
 set +a
 
 POSTGRES_USER="${POSTGRES_USER:-taskboard_user}"
@@ -26,13 +42,21 @@ if [ ! -d "$MIGRATIONS_DIR" ]; then
 fi
 
 echo
+echo "Environment file: $ENV_FILE"
+echo "PostgreSQL database: $POSTGRES_DB"
+echo "PostgreSQL user: $POSTGRES_USER"
+
+echo
 echo "Checking PostgreSQL service..."
 
-if ! docker compose ps postgres | grep -q "running\|Up"; then
+if ! compose ps postgres | grep -q "running\|Up"; then
   echo "ERROR: PostgreSQL service is not running."
   echo
   echo "Start the stack first:"
   echo "  make up"
+  echo
+  echo "Or for production-like:"
+  echo "  make prod-up"
   exit 1
 fi
 
@@ -41,7 +65,7 @@ echo "PostgreSQL is running."
 echo
 echo "Ensuring schema_migrations table exists..."
 
-docker compose exec -T postgres psql \
+compose exec -T postgres psql \
   -U "$POSTGRES_USER" \
   -d "$POSTGRES_DB" \
   -c "CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -65,7 +89,7 @@ for migration in "${migrations[@]}"; do
   filename="$(basename "$migration")"
 
   already_applied="$(
-    docker compose exec -T postgres psql \
+    compose exec -T postgres psql \
       -U "$POSTGRES_USER" \
       -d "$POSTGRES_DB" \
       -tAc "SELECT 1 FROM schema_migrations WHERE filename = '$filename';"
@@ -76,11 +100,11 @@ for migration in "${migrations[@]}"; do
   else
     echo "APPLY: $filename"
 
-    docker compose exec -T postgres psql \
+    compose exec -T postgres psql \
       -U "$POSTGRES_USER" \
       -d "$POSTGRES_DB" < "$migration"
 
-    docker compose exec -T postgres psql \
+    compose exec -T postgres psql \
       -U "$POSTGRES_USER" \
       -d "$POSTGRES_DB" \
       -c "INSERT INTO schema_migrations (filename) VALUES ('$filename');"
