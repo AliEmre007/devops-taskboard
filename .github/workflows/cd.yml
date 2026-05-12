@@ -1,12 +1,6 @@
 name: CD
 
 on:
-  workflow_run:
-    workflows:
-      - Docker Publish
-    types:
-      - completed
-
   workflow_dispatch:
 
 permissions:
